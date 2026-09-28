@@ -2,8 +2,13 @@ const fs = require('fs/promises');
 const path = require('path');
 const { existsSync, mkdirSync } = require('fs');
 
-// Ensure data directory exists (sync is fine for startup)
-const dataDir = path.join(__dirname, '..', 'data');
+// Vercel allows writes only to /tmp.
+// For local/normal server use, keep using the project's data directory.
+const dataDir = process.env.VERCEL
+  ? '/tmp/nodecast-data'
+  : path.join(__dirname, '..', 'data');
+
+// Ensure data directory exists
 if (!existsSync(dataDir)) {
   mkdirSync(dataDir, { recursive: true });
 }
