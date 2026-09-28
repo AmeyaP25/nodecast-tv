@@ -198,26 +198,26 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, async () => {
-    console.log(`NodeCast TV server running on http://localhost:${PORT}`);
+if (require.main === module) {
+    app.listen(PORT, async () => {
+        console.log(`NodeCast TV server running on http://localhost:${PORT}`);
 
-    // Load plugins
-    await loadPlugins().catch(err => {
-        console.error('Plugin initialization failed:', err);
+        await loadPlugins().catch(err => {
+            console.error('Plugin initialization failed:', err);
+        });
+
+        setTimeout(async () => {
+            await syncService.syncAll().catch(console.error);
+            await syncService.startSyncTimer().catch(console.error);
+
+            try {
+                const hwDetect = require('./services/hwDetect');
+                await hwDetect.detect();
+            } catch (err) {
+                console.warn('Hardware detection failed:', err.message);
+            }
+        }, 5000);
     });
+}
 
-    // Trigger background sync with delay to allow server to settle
-    setTimeout(async () => {
-        await syncService.syncAll().catch(console.error);
-        // Start the server-side sync timer after initial sync
-        await syncService.startSyncTimer().catch(console.error);
-
-        // Detect hardware acceleration capabilities
-        try {
-            const hwDetect = require('./services/hwDetect');
-            await hwDetect.detect();
-        } catch (err) {
-            console.warn('Hardware detection failed:', err.message);
-        }
-    }, 5000);
-});
+module.exports = app;
